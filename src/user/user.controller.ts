@@ -3,12 +3,12 @@ import { UserService } from './user.service';
 import { AuthGuard } from '../auth.guard';
 
 
-@Controller('users')
+@Controller('')
 @UseGuards(AuthGuard)
 export class UserController {
     constructor(private readonly UserService: UserService) { }
 
-    @Get()
+    @Get('user/username')
     async getAllUsers() {
         return this.UserService.getAllUsers()
     }
@@ -17,7 +17,7 @@ export class UserController {
         return this.UserService.getUserByID(user.id)
     }
 
-    @Post('addUser')
+    @Post('auth/register')
     addUser(
         @Body('username') username: string,
         @Body('password') password: string,
@@ -31,7 +31,7 @@ export class UserController {
         return await this.UserService.deleteUser(user.id)
     }
 
-    @Post('login')
+    @Post('auth/register')
     async login(
         @Body('username') username: string,
         @Body('password') password: string

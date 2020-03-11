@@ -1,61 +1,64 @@
 import { Injectable } from '@nestjs/common';
 import * as uuid from 'uuid'
+import { InjectRepository } from '@nestjs/typeorm';
+import { Task } from './task.entity';
+import { MongoRepository } from 'typeorm';
+import { TaskInput, TaskUpdateInput } from './task.input';
+import { ApolloError } from 'apollo-server-core';
 
 
 @Injectable()
 export class TaskService {
-    private taskList = [
-        {
-            id: uuid.v4(),
-            taskName: 'CRUD Nest JS',
-            state: 'WIP'
-        }
-    ]
+    constructor(
+        @InjectRepository(Task)
+        private readonly taskRepository: MongoRepository<Task>
+    ) { }
 
     //Get all tasks
-    async getAllTasks() {
-        return this.taskList
+    async getAllTasks(): Promise<Task[]> {
+        return await this.taskRepository.find()
     }
 
     //Get tasks by using id
-    async getTaskByID(id: string) {
-        for(let i = 0; i < this.taskList.length; i++ ){
-            if (this.taskList[i].id === id){
-                return this.taskList[i]
-            }
-        }
-        return 'Not found!'
+    async getTaskByID(_id: string): Promise<Task> {
+        return await this.taskRepository.findOne({ _id })
     }
 
     //Create new task
-    async createTask(taskName: string, state: string):Promise<any>{
-        const newTask = {
-            id: uuid.v4(),
-            taskName,
-            state
-        }
-        this.taskList.push(newTask)
-        return this.taskList
+    async createTask(input: TaskInput): Promise<Task> {
+        const task = new Task()
+        const { name, deadline } = input
+        task._id = uuid.v4()
+        task.name = name
+        task.deadline = deadline
+        await this.taskRepository.save(task)
+        return task
     }
     //Delete task
-    async deleteTask(id: string){
-        for(let i = 0; i < this.taskList.length; i++){
-            if (this.taskList[i].id === id){
-                this.taskList.splice(i, 1)
-                return this.taskList
-            }
+    async deleteTask(_id: string): Promise<boolean> {
+        const task = await this.taskRepository.findOne({ _id })
+        const message = 'Not Found: Project'
+        const code = '404'
+        const additionalProperties = {}
+        if (!task) {
+            throw new ApolloError(message, code, additionalProperties)
         }
-        return 'Not found task!'
+        return (await this.taskRepository.delete(task)) ? true : false
     }
     //Update task
-    async editTask(id: string, taskName: string, state: string):Promise<any>{
-        for(let i = 0; i < this.taskList.length; i++){
-            if (this.taskList[i].id === id){
-                this.taskList[i].taskName = taskName
-                this.taskList[i].state = state
-                return this.taskList
-            }
+    async editTask(_id: string, input: TaskUpdateInput): Promise<Task> {
+        const { name, deadline } = input
+        const message = 'Not Found: Task'
+        const code = '404'
+        const additionalProperties = {}
+
+        const task = await this.taskRepository.findOne({ _id })
+        if (!task) {
+            throw new ApolloError(message, code, additionalProperties)
         }
-        return 'Not found task'
+        task.name = name || task.name
+        task.deadline = deadline || task.deadline
+        const taskSave = await this.taskRepository.save(task)
+        return taskSave
     }
 }

@@ -5,11 +5,11 @@ import * as uuid from 'uuid'
 @Injectable()
 export class UserService {
     private userList = [
-        {
+        {   
+            name: 'admin',
             id: uuid.v4(),
             username: 'admin',
-            password: 'admin',
-            role: 'ADMIN'
+            password: 'admin'
         }
     ]
     //Get all user
@@ -28,13 +28,20 @@ export class UserService {
     }
 
     //Add new user to user list
-    async addUser(username, password, role):Promise<any> {
+    async addUser(name, username, password):Promise<any> {
+        for(let i = 0; i < this.userList.length; i++){
+            if(this.userList[i].username === username){
+                return "Username has been created!"
+            }
+        }
+        
         const newUser = {
+            name,
             id: uuid.v4(),
             username,
-            password,
-            role
+            password
         }
+       
         this.userList.push(newUser);
         return newUser
     }
